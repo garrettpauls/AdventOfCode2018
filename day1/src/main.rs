@@ -1,6 +1,8 @@
 fn main() {
     let input = read_input("input.txt");
-    let result = input.map(part_one);
+    let result = input
+//        .map(part_one);
+        .map(part_two);
     match result {
         Err(e) => println!("{}", e),
         Ok(answer) => println!("Answer: {}", answer),
@@ -9,6 +11,28 @@ fn main() {
 
 fn part_one(input: Vec<i32>) -> i32 {
     input.iter().sum()
+}
+
+fn part_two(input: Vec<i32>) -> i32 {
+    use std::collections::HashSet;
+
+    let mut frequencies = HashSet::new();
+    let mut last = 0;
+
+    let mut iter = input.iter();
+
+    loop {
+        if let Some(x) = iter.next() {
+            last += x;
+
+            let seen_before = !frequencies.insert(last);
+            if seen_before {
+                return last;
+            }
+        } else {
+            iter = input.iter();
+        }
+    }
 }
 
 fn read_input(name: &str) -> Result<Vec<i32>, String> {
