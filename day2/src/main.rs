@@ -40,6 +40,36 @@ fn part_one(input: &Vec<String>) -> Result<String, String> {
     Ok(format!("{}", checksum))
 }
 
-fn part_two(_input: &Vec<String>) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+fn part_two(input: &Vec<String>) -> Result<String, String> {
+    let len = input.len();
+
+    for i in 0..len {
+        for j in 0..len {
+            if i == j { continue; }
+
+            if let Some(matched) = close_match(&input[i], &input[j]) {
+                return Ok(matched);
+            }
+        }
+    }
+
+    Err("No match found".to_owned())
+}
+
+fn close_match(xs: &str, ys: &str) -> Option<String> {
+    if xs.len() != ys.len() { return None; }
+
+    let mut same = String::new();
+
+    for (x, y) in xs.chars().zip(ys.chars()) {
+        if x == y {
+            same.push(x);
+        }
+    }
+
+    if same.len() == xs.len() - 1 {
+        Some(same)
+    } else {
+        None
+    }
 }
