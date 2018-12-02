@@ -1,7 +1,6 @@
 [package]
-name = "day1"
+name = "aoc_common"
 version = "0.1.0"
 authors = ["Garrett Pauls"]
 
 [dependencies]
-aoc_common = { path = "../aoc_common" }
