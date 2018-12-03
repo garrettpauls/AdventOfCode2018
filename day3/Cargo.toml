@@ -1,0 +1,8 @@
+[package]
+name = "day3"
+version = "0.1.0"
+authors = ["Garrett Pauls"]
+
+[dependencies]
+aoc_common = { path = "../aoc_common" }
+regex = "1"
