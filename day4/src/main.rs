@@ -2,7 +2,6 @@ extern crate aoc_common;
 extern crate regex;
 
 use aoc_common::advent;
-use std::cmp::{Ord, Ordering};
 
 fn main() {
     advent(&parse_input, &part_one, &part_two);
@@ -111,7 +110,7 @@ fn part_one(input: &Vec<Input>) -> Result<String, String> {
         }
     }
 
-    let target_id = *sleeps.iter().max_by_key(|(k, v)| *v)
+    let target_id = *sleeps.iter().max_by_key(|(_, v)| *v)
         .ok_or("No max found".to_owned())
         .map(|(id, _)| id)?;
 
@@ -144,12 +143,55 @@ fn part_one(input: &Vec<Input>) -> Result<String, String> {
     }
 
     let minute = minute_counts.iter()
-        .max_by_key(|(k, v)| *v).map(|(k, v)| *k)
+        .max_by_key(|(_, v)| *v).map(|(k, _)| *k)
         .ok_or(format!("No max minute for guard {}", target_id))?;
 
     Ok(format!("id {} * min {} = {}", target_id, minute, target_id * minute))
 }
 
 fn part_two(input: &Vec<Input>) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+    use std::collections::HashMap;
+
+    // minute -> (id -> amount)
+    let mut minute_to_id_amount = HashMap::new();
+
+    let mut id = 0;
+    let mut start_minute = 0;
+
+    for inp in input {
+        match inp.event {
+            Event::BeginShift(gid) => id = gid,
+            Event::Sleep => start_minute = inp.minute,
+            Event::Wake => {
+                for m in start_minute..inp.minute {
+                    minute_to_id_amount.entry(m)
+                        .and_modify(|id_to_amount: &mut HashMap<_, _>| {
+                            id_to_amount.entry(id)
+                                .and_modify(|v| *v += 1)
+                                .or_insert(1);
+                        })
+                        .or_insert_with(|| {
+                            let mut id_to_amount = HashMap::new();
+                            id_to_amount.insert(id, 1);
+                            id_to_amount
+                        });
+                }
+            }
+        }
+    }
+
+    let result =
+        minute_to_id_amount.iter()
+            // (min, (id, count))
+            .map(|(min, id_to_amount)| id_to_amount.iter()
+                .max_by_key(|(_, ct)| *ct)
+                .map_or((0, 0, 0), |(id, ct)| (*min, *id, *ct)) // (u64, i32)
+            )
+            .max_by_key(|(_, _, count)| *count);
+
+    if let Some((min, id, _)) = result {
+        Ok(format!("id {} * min {} = {}", id, min, id * min))
+    } else {
+        Err("No max found".to_owned())
+    }
 }
