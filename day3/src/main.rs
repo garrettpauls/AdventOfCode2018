@@ -2,6 +2,7 @@ extern crate aoc_common;
 extern crate regex;
 
 use aoc_common::advent;
+use std::collections::HashMap;
 
 fn main() {
     advent(&parse_input, &part_one, &part_two);
@@ -77,10 +78,7 @@ $
     }
 }
 
-
-fn part_one(input: &Vec<Rect>) -> Result<String, String> {
-    use std::collections::HashMap;
-
+fn calculate_shares(input: &Vec<Rect>) -> HashMap<(u32, u32), u32> {
     let mut shares = HashMap::new();
 
     for rect in input {
@@ -91,6 +89,12 @@ fn part_one(input: &Vec<Rect>) -> Result<String, String> {
         }
     }
 
+    shares
+}
+
+fn part_one(input: &Vec<Rect>) -> Result<String, String> {
+    let shares = calculate_shares(input);
+
     let share_count = shares
         .values()
         .filter(|v| **v > 1)
@@ -100,5 +104,16 @@ fn part_one(input: &Vec<Rect>) -> Result<String, String> {
 }
 
 fn part_two(input: &Vec<Rect>) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+    let shares = calculate_shares(input);
+
+    for rect in input {
+        let is_shared = rect.coords().iter()
+            .filter_map(|xy| shares.get(xy))
+            .any(|share_count| *share_count > 1);
+        if !is_shared {
+            return Ok(rect.id.clone());
+        }
+    }
+
+    Err("All overlap".to_owned())
 }
