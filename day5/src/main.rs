@@ -50,5 +50,26 @@ fn part_one(input: &Vec<char>) -> Result<String, String> {
 }
 
 fn part_two(input: &Vec<char>) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+    use std::collections::HashSet;
+
+    let units: HashSet<_> = input.iter()
+        .map(|c| c.to_ascii_lowercase())
+        .collect();
+
+    let mut shortest_count = usize::max_value();
+    let mut shortest_str = "".to_owned();
+
+    for unit in units {
+        let filtered = input.iter()
+            .filter(|c| !c.eq_ignore_ascii_case(&unit));
+
+        let polymer = create_reduction(filtered);
+        let len = polymer.len();
+        if len < shortest_count {
+            shortest_count = len;
+            shortest_str = String::from_iter(polymer.iter());
+        }
+    }
+
+    Ok(format!("{} = {}", shortest_count, shortest_str))
 }
