@@ -44,3 +44,9 @@ fn read_file_contents_as_string(file: &mut File) -> Result<String, Error> {
         Err(e) => Err(e)
     }
 }
+
+pub fn i32_from_str(value: &str) -> Result<i32, String> {
+    use std::str::FromStr;
+
+    i32::from_str(value).map_err(|e| format!("Could not parse '{}' as i32: {}", &value, e))
+}
