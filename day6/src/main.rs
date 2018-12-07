@@ -91,5 +91,31 @@ fn part_one(input: &Vec<Point>) -> Result<String, String> {
 }
 
 fn part_two(input: &Vec<Point>) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+    let threshold = 10000;
+
+    let mx = input.iter()
+        .map(|p| p.x)
+        .max().expect("At least one point must exist");
+    let my = input.iter()
+        .map(|p| p.y)
+        .max().expect("At least one point must exist");
+
+    let mut area = 0;
+
+    for x in 0..=mx {
+        'y: for y in 0..=my {
+            let mut distance = 0;
+
+            for pt in input {
+                distance += pt.distance_to(x, y);
+                if distance >= threshold {
+                    continue 'y;
+                }
+            }
+
+            area += 1;
+        }
+    }
+
+    Ok(format!("{}", area))
 }
