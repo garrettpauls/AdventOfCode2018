@@ -20,6 +20,17 @@ impl Node {
 
         local + child
     }
+
+    fn get_value(&self) -> usize {
+        if self.children.is_empty() {
+            self.metadata.iter().sum()
+        } else {
+            self.metadata.iter()
+                .map(|idx| self.children.get(*idx - 1)
+                    .map_or(0, |c| c.get_value()))
+                .sum()
+        }
+    }
 }
 
 fn parse_input(input: &str) -> Result<Node, String> {
@@ -58,5 +69,5 @@ fn part_one(input: &Node) -> Result<String, String> {
 }
 
 fn part_two(input: &Node) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+    Ok(format!("{}", input.get_value()))
 }
