@@ -1,7 +1,7 @@
 extern crate aoc_common;
 
 use aoc_common::advent;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 fn main() {
     advent(&parse_input, &part_one, &part_two);
@@ -72,5 +72,69 @@ fn determine_root_instructions(input: &Vec<(String, String)>) -> Vec<&String> {
 }
 
 fn part_two(input: &Vec<(String, String)>) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+    let worker_count = 5;
+    let base_seconds = 60;
+
+    let mut completed: Vec<&String> = Vec::new();
+    let mut available = determine_root_instructions(input);
+    let mut in_progress = HashMap::new();
+    let mut seconds = 0;
+
+    while available.len() > 0 || in_progress.len() > 0 {
+        available.sort();
+        available.reverse();
+
+        // populate steps in progress
+        while available.len() > 0 && in_progress.len() < worker_count {
+            let current = available.pop().unwrap();
+            in_progress.entry(current)
+                .or_insert(get_step_time(current) + base_seconds);
+        }
+
+        // process steps until one is completed
+        let mut just_completed = Vec::new();
+        loop {
+            seconds += 1;
+
+            for (key, sec) in in_progress.iter_mut() {
+                *sec -= 1;
+                if *sec == 0 {
+                    just_completed.push(*key);
+                }
+            }
+
+            if just_completed.len() > 0 {
+                break;
+            }
+        }
+
+        for key in just_completed {
+            completed.push(key);
+            in_progress.remove(key);
+        }
+
+        let next = completed.iter()
+            .map(|x| determine_next(input, x))
+            .flatten()
+            .filter(|x| !completed.contains(x));
+        for n in next {
+            if are_prereqs_filled(input, &n, &completed)
+                && !available.contains(&n)
+                && !completed.contains(&n) {
+                available.push(n)
+            }
+        }
+    }
+
+    Ok(format!("{}", seconds))
+}
+
+fn get_step_time(step: &str) -> i32 {
+    let delay: usize = step.chars()
+        .map(|c| "ABCDEFGHIJKLMNOPQRSTUVWXYZ".char_indices()
+            .find(|(_, x)| *x == c)
+            .map(|(i, _)| i + 1)
+            .unwrap_or(0))
+        .sum();
+    delay as i32
 }
