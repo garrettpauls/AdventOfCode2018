@@ -39,14 +39,19 @@ fn part_one(input: &Vec<Input>) -> Result<String, String> {
     Ok(format!("{:?}", scores))
 }
 
-fn run_game(input: &Input) -> Result<(usize, i32), String> {
+fn run_game(input: &Input) -> Result<(usize, u64), String> {
     let mut marbles = vec![0];
     let mut current = 0;
-    let mut scores: Vec<_> = (0..input.players).map(|x| 0).collect();
+    let mut scores: Vec<u64> = (0..input.players).map(|_| 0).collect();
     let mut current_player = scores.len() - 1;
+    let progress = if input.marbles >= 100 { input.marbles / 100 } else { input.marbles } as u64;
 
-    for m in 1..=input.marbles {
+    for m in 1..=input.marbles as u64 {
         current_player = (current_player + 1) % scores.len();
+
+        if m % progress == 0 {
+            println!("{}% {}", (m * 100) / input.marbles as u64, m);
+        }
 
         if m % 23 == 0 {
             if let Some(v) = scores.get_mut(current_player) {
@@ -68,11 +73,22 @@ fn run_game(input: &Input) -> Result<(usize, i32), String> {
         }
     }
 
-    scores.iter().enumerate().max_by_key(|(p, s)| *s)
+    scores.iter().enumerate().max_by_key(|(_, s)| *s)
         .map(|(p, s)| (p + 1, *s))
         .ok_or("No highest score".to_owned())
 }
 
 fn part_two(input: &Vec<Input>) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+    let mut scores = Vec::new();
+
+    for config in input {
+        let (player, score) = run_game(&Input {
+            players: config.players,
+            marbles: config.marbles * 100,
+        })?;
+        scores.push(score);
+        println!("{}, {}: player {} won with score {}", config.players, config.marbles, player, score);
+    }
+
+    Ok(format!("{:?}", scores))
 }
