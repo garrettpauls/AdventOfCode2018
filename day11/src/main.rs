@@ -29,11 +29,11 @@ fn part_two(grid: &Grid) {
         .map(|side_len| {
             let ((x, y), amount) = find_largest_power_block(&grid, side_len, side_len);
             println!("Side len of {} max: {},{},{}", side_len, x, y, amount);
-            ((x, y), amount)
+            ((x, y, side_len), amount)
         }).max_by_key(|(_, amt)| *amt);
 
-    if let Some(((x, y), max)) = result {
-        println!("Part 2: {},{},{}", x, y, max);
+    if let Some(((x, y, len), max)) = result {
+        println!("Part 2: {},{},{} with value {}", x, y, len, max);
     } else {
         println!("Part 2: no max value found");
     }
@@ -90,7 +90,7 @@ fn show_grid(grid: Grid) -> String {
 }
 
 fn find_largest_power_block(grid: &Grid, width: i32, height: i32) -> (Point, i32) {
-    let mut max = 0;
+    let mut max = i32::min_value();
     let mut pos = (0, 0);
     for x in 1..=grid.width - width {
         for y in 1..=grid.height - height {
