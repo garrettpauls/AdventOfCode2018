@@ -86,26 +86,42 @@ fn simulate(zero: usize, current: &Vec<bool>, rules: &HashMap<String, bool>) -> 
     (zero + offset, next)
 }
 
-fn part_one(input: &Input) -> Result<String, String> {
+fn simulate_for(gen: u64, input: &Input, show_prog_every: u64) -> (usize, Vec<bool>) {
     let mut state = input.initial_state.clone();
     let mut zero = 0;
+
 //    println!("{}: {}", zero, show_plant_list(&state));
-    for _ in 0..20 {
+    for p in 0..gen {
+        if p % show_prog_every == 0 {
+            println!("{}", p);
+        }
         let (nz, ns) = simulate(zero, &state, &input.rules);
         state = ns;
         zero = nz;
 //        println!("{}: {}", zero, show_plant_list(&state));
     }
 
-    let mut sum = 0;
+    (zero, state)
+}
+
+fn sum_plant_locations(zero: usize, state: &Vec<bool>) -> i64 {
+    let mut sum: i64 = 0;
     for (i, v) in state.iter().enumerate() {
         if *v {
-            sum += i as i32 - zero as i32;
+            sum += i as i64 - zero as i64;
         }
     }
+    sum
+}
+
+fn part_one(input: &Input) -> Result<String, String> {
+    let (zero, state) = simulate_for(20, input, 1);
+    let sum = sum_plant_locations(zero, &state);
     Ok(format!("{}", sum))
 }
 
-fn part_two(_input: &Input) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+fn part_two(input: &Input) -> Result<String, String> {
+    let (zero, state) = simulate_for(50000000000, input, 10000);
+    let sum = sum_plant_locations(zero, &state);
+    Ok(format!("{}", sum))
 }
