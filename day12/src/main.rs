@@ -121,7 +121,33 @@ fn part_one(input: &Input) -> Result<String, String> {
 }
 
 fn part_two(input: &Input) -> Result<String, String> {
-    let (zero, state) = simulate_for(50000000000, input, 10000);
+    let target: i64 = 50000000000;
+    let mut state = input.initial_state.clone();
+    let mut zero = 0;
+    let mut seen = Vec::new();
+
+    for i in 0..target {
+        println!("Simulating iteration: {}", i + 1);
+        let (nz, ns) = simulate(zero, &state, &input.rules);
+
+        if let Some(pos) = seen.iter().position(|(z, s)| *z == nz && s == &ns) {
+            println!("Loop detected: {} -> {}", pos, i);
+            for j in pos..seen.len() {
+                let (jz, ref js) = seen[j];
+                println!("{}: {}, {}",
+                         j,
+                         sum_plant_locations(jz, &js),
+                         show_plant_list(&js));
+            }
+
+            break;
+        }
+
+        seen.push((nz, ns.clone()));
+        state = ns;
+        zero = nz;
+    }
+//    let (zero, state) = simulate_for(50000000000, input, 10000);
     let sum = sum_plant_locations(zero, &state);
     Ok(format!("{}", sum))
 }
