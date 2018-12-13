@@ -258,6 +258,26 @@ fn part_one(input: &Input) -> Result<String, String> {
     }
 }
 
-fn part_two(_input: &Input) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+fn part_two(input: &Input) -> Result<String, String> {
+    let mut carts: Vec<_> = input.carts.to_owned();
+    let mut tick: u32 = 0;
+
+    while carts.len() > 1 {
+        tick += 1;
+        carts = simulate(&input.track, &carts);
+        println!("{} = {:?}", tick, carts);
+        let crashes = get_crashes(&carts);
+
+        carts = carts.iter()
+            .filter(|cart| !crashes.contains(&cart.location))
+            .map(|cart| *cart)
+            .collect();
+    }
+
+    println!("{:?}", carts);
+    if let Some(cart) = carts.first() {
+        Ok(format!("{} = {},{}", tick, cart.location.0, cart.location.1))
+    } else {
+        Err("No carts remaining".to_owned())
+    }
 }
