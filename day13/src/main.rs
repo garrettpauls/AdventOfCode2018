@@ -2,6 +2,7 @@ extern crate aoc_common;
 
 use aoc_common::advent;
 use std::collections::{HashMap, HashSet};
+use std::cmp::Ordering;
 
 fn main() {
     advent(&parse_input, &part_one, &part_two);
@@ -18,7 +19,7 @@ enum TrackPart {
     CurveBS,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Direction {
     Up,
     Right,
@@ -75,7 +76,7 @@ impl Direction {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Turn {
     Left,
     Straight,
@@ -96,11 +97,41 @@ impl Turn {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq)]
 struct Cart {
+    prev_location: Point,
     location: Point,
     direction: Direction,
     next_turn: Turn,
+    crashed: bool,
+}
+
+impl Ord for Cart {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.location.1 < other.location.1 {
+            Ordering::Less
+        } else if self.location.1 > other.location.1 {
+            Ordering::Greater
+        } else if self.location.0 < other.location.0 {
+            Ordering::Less
+        } else if self.location.0 > other.location.0 {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+
+impl PartialOrd for Cart {
+    fn partial_cmp(&self, other: &Cart) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Cart {
+    fn eq(&self, other: &Cart) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
 }
 
 #[derive(Debug)]
@@ -153,6 +184,8 @@ fn parse_input(input: &str) -> Result<Input, String> {
                     direction,
                     location: point,
                     next_turn: Turn::default(),
+                    crashed: false,
+                    prev_location: point,
                 });
             }
         }
@@ -169,30 +202,42 @@ fn parse_input(input: &str) -> Result<Input, String> {
 }
 
 fn simulate(track: &Track, carts: &Vec<Cart>) -> Vec<Cart> {
-    let mut new_carts = Vec::new();
+    let mut new_carts: Vec<Cart> = Vec::new();
+    let mut ordered: Vec<_> = carts.iter().filter(|c| !c.crashed).collect();
+    ordered.sort();
 
-    for cart in carts {
+    let mut i = 0;
+    while i < ordered.len() {
+        let cart = ordered[i];
         let (x, y) = cart.location;
-        let new_cart = match (&track.tracks[&cart.location], cart.direction) {
+        let mut new_cart = match (&track.tracks[&cart.location], cart.direction) {
             (TrackPart::Horizontal, Direction::Right) => Cart {
                 location: (x + 1, y),
                 direction: Direction::Right,
                 next_turn: cart.next_turn,
+                crashed: false,
+                prev_location: (x, y),
             },
             (TrackPart::Horizontal, Direction::Left) => Cart {
                 location: (x - 1, y),
                 direction: Direction::Left,
                 next_turn: cart.next_turn,
+                crashed: false,
+                prev_location: (x, y),
             },
             (TrackPart::Vertical, Direction::Up) => Cart {
                 location: (x, y - 1),
                 direction: Direction::Up,
                 next_turn: cart.next_turn,
+                crashed: false,
+                prev_location: (x, y),
             },
             (TrackPart::Vertical, Direction::Down) => Cart {
                 location: (x, y + 1),
                 direction: Direction::Down,
                 next_turn: cart.next_turn,
+                crashed: false,
+                prev_location: (x, y),
             },
             (TrackPart::CurveBS, dir) => {
                 let direction = dir.curve_backslash();
@@ -200,6 +245,8 @@ fn simulate(track: &Track, carts: &Vec<Cart>) -> Vec<Cart> {
                     direction,
                     location: direction.update(x, y),
                     next_turn: cart.next_turn,
+                    crashed: false,
+                    prev_location: (x, y),
                 }
             }
             (TrackPart::CurveFS, dir) => {
@@ -208,6 +255,8 @@ fn simulate(track: &Track, carts: &Vec<Cart>) -> Vec<Cart> {
                     direction,
                     location: direction.update(x, y),
                     next_turn: cart.next_turn,
+                    crashed: false,
+                    prev_location: (x, y),
                 }
             }
             (TrackPart::Intersection, dir) => {
@@ -217,27 +266,38 @@ fn simulate(track: &Track, carts: &Vec<Cart>) -> Vec<Cart> {
                     direction,
                     location: direction.update(x, y),
                     next_turn,
+                    crashed: false,
+                    prev_location: (x, y),
                 }
             }
             (part, dir) => panic!("Unsupported combination of part {:?} and direction {:?}", part, dir),
         };
+
+        for j in (i + 1)..ordered.len() {
+            let other_loc = ordered[j].location;
+            if new_cart.location == other_loc {
+                new_cart.crashed = true;
+                ordered.remove(j);
+                break;
+            }
+        }
+        for cart in &mut new_carts {
+            if new_cart.location == cart.location {
+                new_cart.crashed = true;
+                cart.crashed = true;
+                break;
+            }
+        }
+
         new_carts.push(new_cart);
+        i += 1;
     }
 
     new_carts
 }
 
 fn get_crashes(carts: &Vec<Cart>) -> HashSet<Point> {
-    let mut occupied = HashSet::new();
-    let mut crashes = HashSet::new();
-
-    for cart in carts {
-        if !occupied.insert(cart.location) {
-            crashes.insert(cart.location);
-        }
-    }
-
-    crashes
+    carts.iter().filter(|c| c.crashed).map(|c| c.location).collect()
 }
 
 fn part_one(input: &Input) -> Result<String, String> {
@@ -265,18 +325,10 @@ fn part_two(input: &Input) -> Result<String, String> {
     while carts.len() > 1 {
         tick += 1;
         carts = simulate(&input.track, &carts);
-        println!("{} = {:?}", tick, carts);
-        let crashes = get_crashes(&carts);
-
-        carts = carts.iter()
-            .filter(|cart| !crashes.contains(&cart.location))
-            .map(|cart| *cart)
-            .collect();
     }
 
-    println!("{:?}", carts);
     if let Some(cart) = carts.first() {
-        Ok(format!("{} = {},{}", tick, cart.location.0, cart.location.1))
+        Ok(format!("{} = {},{}", tick, cart.prev_location.0, cart.prev_location.1))
     } else {
         Err("No carts remaining".to_owned())
     }
