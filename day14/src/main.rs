@@ -4,10 +4,10 @@ fn main() {
 //    part_one(18);
 //    part_one(2018);
 //    part_one(330121);
-    part_two(vec![5, 1, 5, 8, 9]);
-    part_two(vec![0, 1, 2, 4, 5]);
-    part_two(vec![9, 2, 5, 1, 0]);
-    part_two(vec![5, 9, 4, 1, 4]);
+//    part_two(vec![5, 1, 5, 8, 9]);
+//    part_two(vec![0, 1, 2, 4, 5]);
+//    part_two(vec![9, 2, 5, 1, 0]);
+//    part_two(vec![5, 9, 4, 1, 4]);
     part_two(vec![3, 3, 0, 1, 2, 1]);
 
     fn part_one(after: usize) {
@@ -50,10 +50,10 @@ fn get_digits(value: usize) -> Vec<usize> {
 }
 
 fn add_scores(scores: &mut Vec<usize>, positions: &mut Vec<usize>) {
-    let next_sum = scores.iter().enumerate()
-        .filter(|(i, _)| positions.contains(i))
-        .map(|(_, v)| v)
-        .sum();
+    let mut next_sum = 0;
+    for p in positions.iter() {
+        next_sum += scores[*p];
+    }
     scores.append(&mut get_digits(next_sum));
 
     for position in positions.iter_mut() {
@@ -77,16 +77,25 @@ fn calc_part_one(after: usize) -> Vec<usize> {
 fn calc_part_two(target: &Vec<usize>) -> usize {
     let mut scores: Vec<usize> = vec![3, 7];
     let mut positions = vec![0, 1];
+    let mut search_from = 0;
 
     loop {
-        add_scores(&mut scores, &mut positions);
-        if let Some(x) = index_vec(&scores, &target) {
-            return x;
+        let score_size = scores.len() + 1000000;
+        println!("Fill to {}", score_size);
+        while scores.len() < score_size {
+            add_scores(&mut scores, &mut positions);
         }
+
+        println!("Search from {}", search_from);
+        if let Some(x) = index_vec(&scores[search_from..], &target) {
+            return x + search_from;
+        }
+
+        search_from = scores.len() - target.len();
     }
 }
 
-fn index_vec<T>(haystack: &Vec<T>, needle: &Vec<T>) -> Option<usize>
+fn index_vec<T>(haystack: &[T], needle: &[T]) -> Option<usize>
     where T: Eq {
     if needle.len() > haystack.len() {
         return None;
