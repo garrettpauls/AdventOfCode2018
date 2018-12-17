@@ -5,7 +5,7 @@ mod ops;
 use aoc_common::read_file_contents_as_string_from_path;
 use ops::*;
 use std::str::FromStr;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 fn main() {
     match part_one() {
@@ -57,41 +57,45 @@ fn part_two() -> Result<String, String> {
 }
 
 fn resolve_op_codes() -> Result<HashMap<Param, &'static Fn(&mut Vec<Reg>, Param, Param, Param)>, String> {
+    let mut results = HashMap::new();
     let operations = load_all_operations();
+    let mut unassigned: HashMap<_, _> = operations.iter().enumerate()
+        .map(|(k, v)| (k, *v))
+        .collect();
     let sample = load_samples()?;
-    let mut candidates: HashMap<Param, (HashSet<usize>, HashSet<usize>)> = HashMap::new();
 
     for item in sample {
-        let (op_code, a, b, c) = item.args;
-        let (ref mut matches, ref mut rejected) = candidates
-            .entry(op_code)
-            .or_insert_with(|| (HashSet::new(), HashSet::new()));
+        let op_code = item.args.0;
+        if results.contains_key(&op_code) {
+            continue;
+        }
 
-        for (i, op) in operations.iter().enumerate() {
-            let mut registers = item.reg_before.clone();
-            op(&mut registers, a, b, c);
-            if registers == item.reg_after {
-                if !rejected.contains(&i) {
-                    matches.insert(i);
-                }
-            } else {
-                matches.remove(&i);
-                rejected.insert(i);
+        let mut candidates = get_candidate_indexes(&item, &unassigned);
+
+        if candidates.len() == 1 {
+            let i = candidates[0];
+            if let Some(op) = unassigned.remove(&i) {
+                results.entry(op_code).or_insert(op);
             }
         }
     }
 
-    for (i, (set, _)) in &candidates {
-        if set.len() != 1 {
-            return Err(format!("Didn't resolve to single op {}: {:?}", i, set));
+    return Ok(results);
+
+    fn get_candidate_indexes(item: &PartOneInput, unassigned: &HashMap<usize, &Fn(&mut Vec<Reg>, Param, Param, Param)>) -> Vec<usize> {
+        let mut candidates = Vec::new();
+        let (_, a, b, c) = item.args;
+
+        for (i, op) in unassigned {
+            let mut registers = item.reg_before.clone();
+            op(&mut registers, a, b, c);
+            if registers == item.reg_after {
+                candidates.push(*i);
+            }
         }
+
+        candidates
     }
-
-    let results: HashMap<_, _> = candidates.iter()
-        .map(|(k, (v, _))| (*k, operations[*v.iter().next().unwrap()]))
-        .collect();
-
-    Ok(results)
 }
 
 #[derive(Debug)]
