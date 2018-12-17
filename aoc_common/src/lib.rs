@@ -12,10 +12,7 @@ pub fn advent<Input>(
     for filename in args().skip(1) {
         println!("Input: {}", filename);
 
-        let input = File::open(filename)
-            .map_err(|err| format!("failed to open file: {}", err))
-            .and_then(|mut file| read_file_contents_as_string(&mut file)
-                .map_err(|err| format!("failed to read contents of file: {}", err)))
+        let input = read_file_contents_as_string_from_path(&filename)
             .and_then(|input| parse_input(&input));
 
         match input {
@@ -37,7 +34,14 @@ pub fn advent<Input>(
     }
 }
 
-fn read_file_contents_as_string(file: &mut File) -> Result<String, Error> {
+pub fn read_file_contents_as_string_from_path(filename: &str) -> Result<String, String> {
+    File::open(filename)
+        .map_err(|err| format!("failed to open file: {}", err))
+        .and_then(|mut file| read_file_contents_as_string(&mut file)
+            .map_err(|err| format!("failed to read contents of file: {}", err)))
+}
+
+pub fn read_file_contents_as_string(file: &mut File) -> Result<String, Error> {
     let mut content = String::new();
     match file.read_to_string(&mut content) {
         Ok(_) => Ok(content),
