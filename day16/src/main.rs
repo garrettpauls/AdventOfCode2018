@@ -4,7 +4,6 @@ mod ops;
 
 use aoc_common::read_file_contents_as_string_from_path;
 use ops::*;
-use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 
 fn main() {
@@ -16,15 +15,14 @@ fn main() {
 
 fn part_one() -> Result<String, String> {
     let ops = load_all_operations();
-    let mut op_count = HashMap::new();
     let input = load_part_one_input()?;
+    let mut samples_matching_three = 0;
 
     for item in input {
-        let (opid, a, b, c) = item.args;
-        let mut max_behave_like_count = op_count.entry(opid).or_insert(0);
+        let (_, a, b, c) = item.args;
         let mut behave_like_count = 0;
 
-        for (fnid, op) in ops.iter().enumerate() {
+        for op in ops.iter() {
             let mut registers = item.reg_before.clone();
             op(&mut registers, a, b, c);
             if registers == item.reg_after {
@@ -32,21 +30,13 @@ fn part_one() -> Result<String, String> {
             }
         }
 
-        if behave_like_count > *max_behave_like_count {
-            *max_behave_like_count = behave_like_count;
+        if behave_like_count >= 3 {
+            samples_matching_three += 1;
         }
     }
 
-    for (k, v) in op_count.iter() {
-        println!("Op {}: {:?}", k, v);
-    }
 
-    let three_or_more: Vec<_> = op_count.iter()
-        .filter(|(_, v)| **v >= 3)
-        .map(|(k, _)| *k)
-        .collect();
-
-    Ok(format!("{}: {:?}", three_or_more.len(), three_or_more))
+    Ok(format!("{}", samples_matching_three))
 }
 
 #[derive(Debug)]
