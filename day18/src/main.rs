@@ -12,16 +12,21 @@ fn main() {
 fn get_total_after_minutes(minutes: usize, input: &State) -> String {
     let mut current = input.simulate();
     for m in 1..minutes {
-        println!("{}/{}", m, minutes);
+        println!("{} = {}", m, get_score(&current));
         current = current.simulate();
     }
 
     println!("Minute {}:\n{}", minutes, current);
 
-    let trees = current.count_of(&Tile::Trees);
-    let lumber = current.count_of(&Tile::Lumberyard);
 
-    format!("Trees {} x Lumber {} = {}", trees, lumber, trees * lumber)
+    format!("{}", get_score(&current))
+}
+
+fn get_score(state: &State) -> usize {
+    let trees = state.count_of(&Tile::Trees);
+    let lumber = state.count_of(&Tile::Lumberyard);
+
+    trees * lumber
 }
 
 fn part_one(input: &State) -> Result<String, String> {
@@ -29,5 +34,6 @@ fn part_one(input: &State) -> Result<String, String> {
 }
 
 fn part_two(input: &State) -> Result<String, String> {
-    Ok(get_total_after_minutes(1000000000, input))
+    // 1000000000
+    Ok(get_total_after_minutes(2000, input))
 }
