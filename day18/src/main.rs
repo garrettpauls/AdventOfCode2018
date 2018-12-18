@@ -9,20 +9,25 @@ fn main() {
     advent(&State::from_str, &part_one, &part_two);
 }
 
-fn part_one(input: &State) -> Result<String, String> {
+fn get_total_after_minutes(minutes: usize, input: &State) -> String {
     let mut current = input.simulate();
-    for _ in 1..10 {
+    for m in 1..minutes {
+        println!("{}/{}", m, minutes);
         current = current.simulate();
     }
 
-    println!("Minute 10:\n{}", current);
+    println!("Minute {}:\n{}", minutes, current);
 
     let trees = current.count_of(&Tile::Trees);
     let lumber = current.count_of(&Tile::Lumberyard);
 
-    Err(format!("Trees {} x Lumber {} = {}", trees, lumber, trees * lumber))
+    format!("Trees {} x Lumber {} = {}", trees, lumber, trees * lumber)
 }
 
-fn part_two(_input: &State) -> Result<String, String> {
-    Err("Not implemented".to_owned())
+fn part_one(input: &State) -> Result<String, String> {
+    Ok(get_total_after_minutes(10, input))
+}
+
+fn part_two(input: &State) -> Result<String, String> {
+    Ok(get_total_after_minutes(1000000000, input))
 }
